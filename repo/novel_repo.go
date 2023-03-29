@@ -24,31 +24,39 @@ func NewNovelRepo(db *gorm.DB, rdb *redis.Client) domain.NovelRepo {
 
 // GetAllNovel implements domain.NovelRepo
 func (n *novelRepo) GetAllNovel() ([]model.Novel, error) {
-	var novel []model.Novel
+	var novels []model.Novel
 	var ctx = context.Background()
 
-	// check if data is available in Redis or not
-	// if available, retrieve data from Redis
-	// if not available, retrieve data from database and save to Redis
-	resultNovels, _ := n.rdb.Get(ctx, "novel").Result()
-	if len(resultNovels) > 0 {
-		// data is available in Redis, decode it from JSON and return
-		err := json.Unmarshal([]byte(resultNovels), &novel)
-		return novel, err
-	} else {
-		// data is not available in Redis, retrieve it from database and save to Redis
-		errMySQL := n.db.Model(model.Novel{}).Select("id", "name", "description", "description", "author").Find(&novel)
-		if errMySQL != nil {
-			// encode the books slice into JSON before saving to Redis
-			jsonBytes, err := json.Marshal(novel)
-			jsonString := string(jsonBytes)
-
-			// set the JSON-encoded value in Redis
-			n.rdb.Set(ctx, "novel", jsonString, 0)
-
-			return novel, err
-		} else {
-			return novel, nil
-		}
+	// Check if data is available in Redis.
+	result, err := n.rdb.Get(ctx, "novel").Result()
+	if err != nil && err != redis.Nil {
+		return nil, err
 	}
+
+	// If data is available in Redis, decode it from JSON and return.
+	if len(result) > 0 {
+		err = json.Unmarshal([]byte(result), &novels)
+		return novels, err
+	}
+
+	// If data is not available in Redis, retrieve it from database.
+	err = n.db.Model(model.Novel{}).Select("id", "name", "description", "author").Find(&novels).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Encode the novels slice into JSON before saving to Redis.
+	jsonBytes, err := json.Marshal(novels)
+	if err != nil {
+		return nil, err
+	}
+	jsonString := string(jsonBytes)
+
+	// Set the JSON-encoded value in Redis.
+	err = n.rdb.Set(ctx, "novel", jsonString, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return novels, nil
 }
