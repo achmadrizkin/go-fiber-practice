@@ -10,6 +10,7 @@ import (
 	"go-fiber-practice/usecase"
 	"log"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -24,13 +25,16 @@ func main() {
 	db := database.ConnectionDB(&loadConfig)
 	db.AutoMigrate(&model.Novel{})
 
-	startServer(db)
+	// redis
+	rdb := database.ConnectionRedis(&loadConfig)
+
+	startServer(db, rdb)
 }
 
-func startServer(db *gorm.DB) {
+func startServer(db *gorm.DB, rdb *redis.Client) {
 	app := fiber.New()
 
-	novelRepo := repo.NewNovelRepo(db)
+	novelRepo := repo.NewNovelRepo(db, rdb)
 	novelUseCase := usecase.NewNovelUsecase(novelRepo)
 	novelController := controller.NewNovelController(novelUseCase)
 
