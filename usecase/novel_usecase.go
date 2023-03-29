@@ -24,3 +24,12 @@ func (n *novelUsecase) GetAllNovel() ([]model.Novel, error) {
 	}
 	return res, nil
 }
+
+// GetAllNovelById implements domain.NovelUseCase
+func (n *novelUsecase) GetNovelById(id int) (model.Novel, error) {
+	res, err := n.novelRepo.GetNovelById(id)
+	if err != nil {
+		return model.Novel{}, errors.New("internal server error, get table novel")
+	}
+	return res, nil
+}
