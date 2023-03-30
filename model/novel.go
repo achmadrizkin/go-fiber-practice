@@ -1,12 +1,13 @@
 package model
 
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type Novel struct {
-	Id          int       `gorm:"type:int;primary_key" json:"id"`
-	Name        string    `gorm:"type:varchar(50);not null" json:"name" binding:"required"`
-	Author      string    `gorm:"type:varchar(50);not null" json:"author" binding:"required"`
-	Description string    `gorm:"type:varchar(50);not null" json:"description" binding:"required"`
-	CreatedAt   time.Time `gorm:"type:time;not null" json:"created_at"`
-	UpdatedAt   time.Time `gorm:"type:time;not null" json:"updated_at"`
+	Id          int    `gorm:"type:int;primary_key" json:"id"`
+	Name        string `gorm:"type:varchar(50);not null" json:"name"`
+	Author      string `gorm:"type:varchar(50);not null" json:"author"`
+	Description string `gorm:"type:varchar(50);not null" json:"description"`
+	*gorm.Model
 }

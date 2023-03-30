@@ -23,6 +23,12 @@ func NewNovelRepo(db *gorm.DB, rdb *redis.Client) domain.NovelRepo {
 	}
 }
 
+// CreateNovel implements domain.NovelRepo
+func (n *novelRepo) CreateNovel(createNovel model.Novel) error {
+	err := n.db.Create(&createNovel).Error
+	return err
+}
+
 // GetAllNovel implements domain.NovelRepo
 func (n *novelRepo) GetAllNovel() ([]model.Novel, error) {
 	var novels []model.Novel

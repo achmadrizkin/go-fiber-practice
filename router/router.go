@@ -13,6 +13,7 @@ func NewRouter(router *fiber.App, novelController *controller.NovelController) *
 	})
 
 	router.Get("/novel", novelController.GetNovelAll)
+	router.Post("/novel", novelController.CreateNovel)
 	router.Get("/novel/:id", novelController.GetNovelById)
 
 	return router

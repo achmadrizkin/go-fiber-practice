@@ -33,3 +33,11 @@ func (n *novelUsecase) GetNovelById(id int) (model.Novel, error) {
 	}
 	return res, nil
 }
+
+// CreateNovel implements domain.NovelRepo
+func (n *novelUsecase) CreateNovel(createNovel model.Novel) error {
+	if err := n.novelRepo.CreateNovel(createNovel); err != nil {
+		return errors.New("internal server error, creating organization")
+	}
+	return nil
+}
