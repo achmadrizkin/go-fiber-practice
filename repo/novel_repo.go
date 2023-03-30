@@ -117,3 +117,12 @@ func (n *novelRepo) DeleteNovelRedis(key string) error {
 
 	return nil
 }
+
+// UpdateNovel implements domain.NovelRepo
+func (n *novelRepo) UpdateNovelById(id string, novel model.Novel) error {
+	err := n.db.Model(&model.Novel{}).Where("id = ?", id).Updates(model.Novel{Name: novel.Name, Description: novel.Description}).Error
+	if err != nil {
+		return errors.New("cannot update novel")
+	}
+	return err
+}

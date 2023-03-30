@@ -93,3 +93,44 @@ func (n *NovelController) GetNovelById(ctx *fiber.Ctx) error {
 
 	return ctx.Status(http.StatusOK).JSON(res)
 }
+
+func (n *NovelController) UpdateNovelById(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+	idInt, err := strconv.Atoi(id)
+	var novel model.Novel
+	var response model.Response
+
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID"})
+	}
+
+	if err := ctx.BodyParser(&novel); err != nil {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: "request invalid, unable to parse request body"}
+		return ctx.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	if novel.Author == "" || novel.Name == "" || novel.Description == "" {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: "request invalid, author,name,description is required"}
+		return ctx.Status(http.StatusBadRequest).JSON(response)
+	}
+
+	// update data novel by id (MySQL)
+	if err := n.NovelUseCase.UpdateNovelById(id, novel); err != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// insert all novel to redis
+	if _, errAll := n.NovelUseCase.GetAllNovel(); errAll != nil {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: errAll.Error()}
+		return ctx.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	// insert novel by id to redis
+	if _, errRedisById := n.NovelUseCase.GetNovelById(idInt); errRedisById != nil {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: errRedisById.Error()}
+		return ctx.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response = model.Response{StatusCode: http.StatusOK, Message: "Update data novel by id Success"}
+	return ctx.Status(http.StatusOK).JSON(response)
+}

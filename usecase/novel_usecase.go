@@ -42,7 +42,27 @@ func (n *novelUsecase) CreateNovel(createNovel model.Novel) error {
 
 	// delete redis
 	if errRedis := n.novelRepo.DeleteNovelRedis("novel"); errRedis != nil {
-		return errRedis
+		return errors.New("internal server error, cannot delete redis key:novel")
+	}
+
+	return nil
+}
+
+// UpdateNovel implements domain.NovelUseCase
+func (n *novelUsecase) UpdateNovelById(id string, novel model.Novel) error {
+	err := n.novelRepo.UpdateNovelById(id, novel)
+	if err != nil {
+		return errors.New("internal server error, cannot update table novel")
+	}
+
+	// delete redis by id
+	if errRedis := n.novelRepo.DeleteNovelRedis("novel" + id); errRedis != nil {
+		return errors.New("internal server error, cannot delete redis key:novel+id")
+	}
+
+	// delete all redis data
+	if errRedisAll := n.novelRepo.DeleteNovelRedis("novel"); errRedisAll != nil {
+		return errors.New("internal server error, cannot delete redis key:novel")
 	}
 
 	return nil
