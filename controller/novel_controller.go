@@ -19,21 +19,41 @@ func NewNovelController(NovelUseCase domain.NovelUseCase) *NovelController {
 
 func (n *NovelController) CreateNovel(ctx *fiber.Ctx) error {
 	var novel model.Novel
+	var response model.Response
 
 	if err := ctx.BodyParser(&novel); err != nil {
-		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{"message": "request invalid, unable to parse request body"})
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: "request invalid, unable to parse request body"}
+		return ctx.Status(http.StatusBadRequest).JSON(response)
 	}
 
 	if novel.Author == "" || novel.Name == "" || novel.Description == "" {
-		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{"message": "request invalid, author,name,description is required"})
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: "request invalid, author,name,description is required"}
+		return ctx.Status(http.StatusBadRequest).JSON(response)
 	}
 
+	// save into database
 	err := n.NovelUseCase.CreateNovel(novel)
 	if err != nil {
-		return ctx.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: err.Error()}
+		return ctx.Status(http.StatusInternalServerError).JSON(response)
 	}
 
-	return ctx.Status(http.StatusOK).JSON(fiber.Map{"message": "Insert data novel success"})
+	// delete redis db
+	_, errResponse := n.NovelUseCase.GetAllNovel()
+	if errResponse != nil {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: errResponse.Error()}
+		return ctx.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	// insert all novel to redis
+	_, errAll := n.NovelUseCase.GetAllNovel()
+	if errAll != nil {
+		response = model.Response{StatusCode: http.StatusBadRequest, Message: errAll.Error()}
+		return ctx.Status(http.StatusInternalServerError).JSON(response)
+	}
+
+	response = model.Response{StatusCode: http.StatusOK, Message: "Insert data novel Success"}
+	return ctx.Status(http.StatusOK).JSON(response)
 }
 
 func (n *NovelController) GetNovelAll(ctx *fiber.Ctx) error {

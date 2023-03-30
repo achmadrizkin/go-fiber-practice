@@ -39,5 +39,11 @@ func (n *novelUsecase) CreateNovel(createNovel model.Novel) error {
 	if err := n.novelRepo.CreateNovel(createNovel); err != nil {
 		return errors.New("internal server error, creating organization")
 	}
+
+	// delete redis
+	if errRedis := n.novelRepo.DeleteNovelRedis("novel"); errRedis != nil {
+		return errRedis
+	}
+
 	return nil
 }

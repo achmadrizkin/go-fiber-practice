@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"go-fiber-practice/domain"
 	"go-fiber-practice/model"
 	"strconv"
@@ -105,4 +106,14 @@ func (n *novelRepo) GetNovelById(id int) (model.Novel, error) {
 	}
 
 	return novels, nil
+}
+
+// DeleteNovelRedis implements domain.NovelRepo
+func (n *novelRepo) DeleteNovelRedis(key string) error {
+	ctx := context.Background()
+	if err := n.rdb.Del(ctx, key).Err(); err != nil {
+		return errors.New("cannot delete key, maybe null value")
+	}
+
+	return nil
 }
